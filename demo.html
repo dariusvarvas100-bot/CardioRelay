@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardioRelay | Hospital Transfer Audit</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink:#172842;
+  --muted:#506177;
+  --blue:#153ea5;
+  --blue-dim:#eaf0ff;
+  --border:#ced9e8;
+  --paper:#f3f6fa;
+  --coral:#943d28;
+  --coral-dim:#fff0e8;
+  --plain: #fff;
+  --body: "Inter", "Geist", system-ui, -apple-system, sans-serif;
+  --display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+}
+* { box-sizing:border-box }
+body { margin:0; color:var(--ink); background:var(--paper); font:15px/1.5 var(--body) }
+h1,h2,h3,p { margin:0 }
+button,select { font:inherit }
+button { cursor:pointer }
+button:focus-visible,select:focus-visible,a:focus-visible { outline:3px solid #0b77b4; outline-offset:3px }
+[hidden] { display:none !important }
+a { color:var(--blue); text-underline-offset:3px }
+.shell { width:min(1140px,calc(100% - 56px)); margin:auto }
+header { background:var(--plain); border-bottom:1px solid var(--border) }
+.mast { min-height:61px; display:flex; justify-content:space-between; align-items:center; gap:12px }
+.wordmark { display:flex; align-items:center; gap:10px; color:var(--ink); font-size:22px; font-weight:850; letter-spacing:-.045em }
+.mark { display:grid; place-items:center; background:var(--blue); color:white; width:34px; height:34px; border-radius:9px; font-size:24px; font-weight:700; letter-spacing:0; line-height:1 }
+.edition,.kicker { font-size:12px; font-weight:800; letter-spacing:.1em; text-transform:uppercase }
+.edition { color:var(--muted); text-align:right }
+.kicker { color:var(--blue) }
+main { padding-top:33px }
+.hero { margin-bottom:24px }
+h1 { font:500 clamp(38px,5.5vw,64px)/1.02 var(--display); letter-spacing:-.046em; margin:6px 0 8px }
+.hero p,.sub,.condition,.methods,footer { color:var(--muted) }
+.hero p { max-width:870px }
+.notices { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px }
+.notice { background:var(--blue-dim); color:var(--blue); font-size:12px; font-weight:750; border-radius:100px; padding:5px 10px }
+.notice.clinical { background:#e8edf5; color:#41526b }
+.panel { background:var(--plain); border:1px solid var(--border); border-radius:15px; padding:20px 23px }
+.top { display:flex; align-items:flex-end; justify-content:space-between; gap:12px 22px; flex-wrap:wrap }
+h2 { font-size:19px; font-weight:800; letter-spacing:-.025em }
+.sub,.condition { font-size:13px }
+.sub { margin-top:3px }
+.selector { display:flex; align-items:center; gap:8px; flex-wrap:wrap; max-width:100%; color:var(--muted); font-size:13px; font-weight:700 }
+select { max-width:100%; border:1px solid #9eacc0; border-radius:8px; background:white; color:var(--ink); padding:8px; min-height:40px }
+.site-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:15px 0 8px }
+.site {
+  background:#f8faff; color:var(--ink); padding:12px 12px 11px; text-align:left;
+  border:1px solid var(--border); border-radius:10px; min-width:0;
+}
+.site:hover { border-color:#758fc4 }
+.site[aria-pressed="true"] { border-color:var(--blue); background:var(--blue-dim); box-shadow:inset 0 -3px 0 var(--blue) }
+.site-name { display:block; font-weight:800; font-size:15px; letter-spacing:-.02em }
+.site-total { display:block; color:var(--muted); font-size:12px; margin-top:2px }
+.site-metric { display:block; margin-top:8px; color:var(--ink); font-size:13px; font-weight:675 }
+.site-metric strong { color:var(--coral); font-weight:850; font-variant-numeric:tabular-nums }
+.site-bar { display:block; height:5px; border-radius:3px; overflow:hidden; background:#dde6f1; margin-top:7px }
+.site-bar i { display:block; height:100%; background:#a04a35; border-radius:3px }
+.condition { margin-top:9px }
+.detail { margin-top:13px; display:grid; grid-template-columns:minmax(235px,.7fr) minmax(0,1fr); gap:18px }
+.detail h2 { font-size:25px }
+.detail p { margin-top:4px }
+.flags { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0 2px }
+.flag-detail { border-radius:10px; background:#f3f6fc; padding:12px; min-width:0 }
+.flag-detail.missed { background:var(--coral-dim) }
+.flag-detail strong { display:block; font-size:25px; color:var(--blue); letter-spacing:-.04em; font-weight:830; line-height:1.18; font-variant-numeric:tabular-nums }
+.flag-detail.missed strong { color:var(--coral) }
+.flag-detail span { display:block; color:var(--ink); font-size:12px; font-weight:700; margin:3px 0 }
+.note { color:var(--muted); font-size:12px; margin-top:9px !important }
+.table-wrap { padding:11px 13px 8px; border:1px solid var(--border); border-radius:11px }
+table { width:100%; border-collapse:collapse; font-size:12px; line-height:1.32 }
+caption { font-weight:800; font-size:15px; text-align:left; padding:1px 0 7px }
+th,td { padding:7px 6px; border-top:1px solid var(--border); text-align:center; vertical-align:middle }
+th:first-child { text-align:left }
+th { font-weight:750 }
+thead th:first-child { color:var(--muted); font-weight:650 }
+.cell { font-size:18px; font-weight:850; font-variant-numeric:tabular-nums; white-space:nowrap }
+.cell.fn { color:var(--coral); background:var(--coral-dim) }
+.cell.fp { color:var(--blue); background:var(--blue-dim) }
+td small { display:block; font-size:10px; color:var(--muted); font-weight:650 }
+.meta { margin-top:12px; padding-top:10px; border-top:1px solid var(--border); color:var(--muted); font-size:13px }
+.meta strong { color:var(--ink) }
+.methods { margin:12px 0 18px; font-size:13px }
+footer { border-top:1px solid var(--border); padding:13px 0 23px; font-size:12px }
+footer p+p { margin-top:4px }
+@media(max-width:730px) {
+  .shell { width:calc(100% - 30px) }
+  main { padding-top:22px }
+  .hero { margin-bottom:16px }
+  .detail { gap:14px; grid-template-columns:minmax(0,1fr) }
+  .panel { padding:16px }
+}
+@media(max-width:520px) {
+  .site-list { grid-template-columns:minmax(0,1fr); gap:7px }
+  .site { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:baseline; gap:2px 7px }
+  .site-name { grid-column:1 / -1 }
+  .site-total { grid-row:2; margin-top:0 }
+  .site-metric { grid-column:2; grid-row:2; margin-top:0 }
+  .site-bar { grid-column:1 / -1; margin-top:5px }
+  .mast { min-height:52px }
+  .wordmark { font-size:20px }
+  .edition { font-size:10px }
+  th,td { padding:6px 4px }
+  .table-wrap { padding-inline:9px }
+  table { font-size:11px }
+  .flag-detail { padding:10px }
+}
+
+.mode-row { display:flex; flex-wrap:wrap; gap:6px; padding:4px; margin-bottom:16px;
+  background:#eff3f9; border:1px solid var(--border); border-radius:11px; width:fit-content }
+.mode-button,.budget-control { border:1px solid transparent; color:var(--muted); background:transparent; border-radius:7px; font-size:13px; font-weight:750; padding:7px 11px }
+.mode-button:hover,.budget-control:hover { color:var(--blue) }
+.mode-button[aria-pressed="true"] { background:white; color:var(--blue); border-color:#a5b6dc }
+.budget-choices { display:flex; flex-wrap:wrap; gap:5px }
+.budget-control { border-color:var(--border); padding:7px 10px; min-height:39px }
+.budget-control[aria-pressed="true"] { border-color:var(--blue); background:var(--blue-dim); color:var(--blue) }
+.budget-metric { display:block; margin-top:7px; font-size:13px; font-weight:750 }
+.budget-metric strong { color:var(--blue); font-weight:850; font-variant-numeric:tabular-nums }
+.budget-headline { margin:10px 0 5px; padding:8px 12px; border-radius:8px; background:#eaf0ff; color:#1e3c83; font-size:13px }
+.budget-headline strong { font-weight:850 }
+.budget-overview { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px 12px; padding:12px 13px; background:#f3f6fc; border-radius:9px; margin:11px 0 }
+.budget-overview h3 { font-size:19px; font-weight:850; letter-spacing:-.025em }
+.budget-overview p { font-size:13px; font-weight:720; color:var(--blue) }
+.budget-compare { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px }
+.budget-card { padding:13px; border:1px solid var(--border); border-radius:10px; min-width:0 }
+.budget-card h3 { font-size:15px; font-weight:820; letter-spacing:-.02em; margin:0 0 6px }
+.budget-main { display:flex; align-items:baseline; flex-wrap:wrap; gap:0 7px; line-height:1.2 }
+.budget-main b { font-size:33px; color:var(--blue); letter-spacing:-.05em; font-variant-numeric:tabular-nums }
+.budget-main span { font-size:13px; color:var(--muted) }
+.budget-fill { height:6px; overflow:hidden; border-radius:6px; background:#e1eaf9; margin:10px 0 7px }
+.budget-fill i { display:block; height:100%; background:#335bbb }
+.budget-card.baseline .budget-fill i { background:#65708a }
+.budget-card .errors { display:flex; flex-wrap:wrap; gap:2px 15px; font-size:13px; color:var(--muted) }
+.budget-card .errors b { color:var(--ink); font-variant-numeric:tabular-nums }
+.budget-footer { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); font-size:13px }
+.budget-footer p + p { margin-top:5px }
+.budget-footer .condition { margin-top:5px }
+@media(max-width:520px) {
+  .mode-row { gap:3px; margin-bottom:13px }
+  .mode-button { padding-inline:7px; font-size:12px }
+  .budget-metric { grid-column:2; grid-row:2; margin:0; font-size:12px; text-align:right }
+  .budget-card { padding:10px }
+  .budget-card h3 { min-height:2.7em; font-size:13px; line-height:1.3 }
+  .budget-main b { font-size:27px }
+  .budget-card .errors { font-size:12px; gap:2px }
+}
+</style>
+</head>
+<body>
+<header><div class="shell mast">
+  <div class="wordmark"><span class="mark" aria-hidden="true">+</span>CardioRelay</div>
+  <p class="edition">AI + Health</p>
+</div></header>
+<main class="shell">
+  <section class="hero" aria-labelledby="headline">
+    <p class="kicker">Hospital transfer audit</p>
+    <h1 id="headline">Does a Cleveland-trained model travel?</h1>
+    <p>A quality improvement nurse can compare how many archived heart disease cases a model misses and how much review it creates when tested on new hospital cohorts.</p>
+    <div class="notices">
+      <span class="notice">Public archive · aggregate counts</span>
+      <span class="notice clinical">This project is a prototype and is not medical advice.</span>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="CardioRelay audit">
+    <div class="mode-row" role="group" aria-label="Audit views">
+      <button type="button" class="mode-button" id="choose-budget" aria-pressed="true" aria-controls="budget-view">Same review budget</button>
+      <button type="button" class="mode-button" id="choose-fixed" aria-pressed="false" aria-controls="fixed-view">Fixed cutoffs</button>
+    </div>
+    <div class="top" id="fixed-head" hidden>
+      <div>
+        <h2 id="comparison">Compare the three unseen cohorts</h2>
+        <p class="sub">Choose a cohort to inspect its misses, false flags and review workload.</p>
+      </div>
+      <div class="selector"><label for="model">Review rule</label><select id="model"></select></div>
+    </div>
+
+    <div class="top" id="budget-head">
+      <div>
+        <h2 id="budget-heading">Which model catches more at the same workload?</h2>
+        <p class="sub">Compare the two scores with the same number of review slots at each site.</p>
+      </div>
+      <div class="selector">
+        <span>Review budget</span>
+        <div class="budget-choices" id="budgets" role="group" aria-label="Share of records reviewed"></div>
+      </div>
+    </div>
+    <div class="site-list" id="sites" role="group" aria-label="Hospital cohorts"></div>
+    <div id="fixed-view" hidden>
+      <p class="condition" id="condition"></p>
+    <div class="detail" id="detail" aria-live="polite">
+      <div>
+        <h2 id="site-title"></h2>
+        <p class="sub" id="site-hint"></p>
+        <div class="flags">
+          <div class="flag-detail missed"><strong id="missed"></strong><span>Heart disease cases missed</span></div>
+          <div class="flag-detail"><strong id="false-flags"></strong><span>Rows without heart disease falsely flagged</span></div>
+        </div>
+        <p class="note" id="review-note"></p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <caption>Archive label vs. review flag</caption>
+          <thead><tr><th scope="col">Archive label</th><th scope="col">Flagged</th><th scope="col">Not flagged</th><th scope="col">Total</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Heart disease</th><td class="cell" id="tp"></td><td class="cell fn"><span id="fn"></span><small>Misses</small></td><td id="pos"></td></tr>
+            <tr><th scope="row">No heart disease</th><td class="cell fp"><span id="fp"></span><small>False flags</small></td><td class="cell" id="tn"></td><td id="neg"></td></tr>
+            <tr><th scope="row">Total</th><td id="flagged"></td><td id="unflagged"></td><td id="total"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+      <p class="meta" id="auc-note" hidden></p>
+    </div>
+    <div id="budget-view" aria-labelledby="budget-heading">
+      <p class="budget-headline" id="budget-headline" hidden></p>
+      <div class="budget-overview">
+        <h3 id="budget-site"></h3>
+        <p id="budget-capacity"></p>
+      </div>
+      <div class="budget-compare" id="budget-compare"></div>
+      <div class="budget-footer">
+        <p id="budget-result" role="status"></p>
+        <p class="condition">This retrospective experiment ranks the full archive and gives each method the top slots, rounded down to a whole record count. It averages over ties, so some expected counts are fractional.</p>
+      </div>
+    </div>
+  </section>
+  <p class="methods" id="methods-note">The cohorts contain historical records from the UCI Heart Disease dataset. Population and measurement differences can affect how well a Cleveland-trained model transfers.</p>
+</main>
+<footer class="shell">
+  <p>Source <a href="https://archive.ics.uci.edu/dataset/45/heart+disease">UCI Heart Disease dataset</a> · See the <a href="README.md">project README</a> for the full evaluation and sources.</p>
+</footer>
+<script id="project-data" type="application/json">{"sites":[{"id":"hungary","label":"Hungarian Institute","rows":[{"id":"logistic","tp":69,"fp":28,"tn":160,"fn":37,"auc":0.822511039743075},{"id":"chest-pain","tp":87,"fp":47,"tn":141,"fn":19,"auc":0.8143566840626254},{"id":"flag-all","tp":106,"fp":188,"tn":0,"fn":0},{"id":"flag-none","tp":0,"fp":0,"tn":188,"fn":106}]},{"id":"switzerland","label":"Swiss cohort","rows":[{"id":"logistic","tp":87,"fp":2,"tn":6,"fn":28,"auc":0.7358695652173912},{"id":"chest-pain","tp":100,"fp":2,"tn":6,"fn":15,"auc":0.8152173913043478},{"id":"flag-all","tp":115,"fp":8,"tn":0,"fn":0},{"id":"flag-none","tp":0,"fp":0,"tn":8,"fn":115}]},{"id":"long-beach-va","label":"Long Beach VA","rows":[{"id":"logistic","tp":116,"fp":26,"tn":25,"fn":33,"auc":0.7066719305171734},{"id":"chest-pain","tp":113,"fp":26,"tn":25,"fn":36,"auc":0.6511383076720622},{"id":"flag-all","tp":149,"fp":51,"tn":0,"fn":0},{"id":"flag-none","tp":0,"fp":0,"tn":51,"fn":149}]}],"models":[{"id":"logistic","label":"CardioRelay · Cleveland-trained","description":"Logistic regression using four intake fields. The cutoff was fixed on Cleveland validation records. Fixed cutoff: 0.535 (rounded)."},{"id":"chest-pain","label":"Chest-pain category only","description":"Uses the Cleveland training disease rate for each recorded chest-pain category as its score. Fixed cutoff: 0.333 (rounded)."},{"id":"flag-all","label":"Flag every record","description":"Flags every archived record for review, which catches every positive case and maximizes review volume."},{"id":"flag-none","label":"Flag no records","description":"Flags no records for priority review and misses every archived positive case."}],"defaultModel":"logistic","datasetNote":"The UCI cohorts contain patients previously referred for cardiac workup. The archive label records disease status at that time. The test did not measure whether flags would improve care. See the analysis for the separate Cleveland holdout.","budget":{"fractions":[0.25,0.5,0.75],"primary":0.5,"sites":[{"id":"hungary","n":294,"positive":106,"negative":188,"rows":[{"capacity":0.25,"reviewCount":73,"recallDifference":0.035281484890320625,"recallDifferenceCI":null,"models":[{"id":"logistic","tp":53.0,"fp":20.0,"fn":53.0,"recall":0.5},{"id":"chest-pain","tp":49.260162601626014,"fp":23.739837398373986,"fn":56.739837398373986,"recall":0.4647185151096794}]},{"capacity":0.5,"reviewCount":147,"recallDifference":-0.024982529699510873,"recallDifferenceCI":[-0.0805312730497335,0.034941577240190376],"models":[{"id":"logistic","tp":87.0,"fp":60.0,"fn":19.0,"recall":0.8207547169811321},{"id":"chest-pain","tp":89.64814814814815,"fp":57.35185185185185,"fn":16.351851851851848,"recall":0.845737246680643}]},{"capacity":0.75,"reviewCount":220,"recallDifference":-0.03221787112851548,"recallDifferenceCI":null,"models":[{"id":"logistic","tp":97.0,"fp":123.0,"fn":9.0,"recall":0.9150943396226415},{"id":"chest-pain","tp":100.41509433962264,"fp":119.58490566037736,"fn":5.584905660377359,"recall":0.947312210751157}]}]},{"id":"switzerland","n":123,"positive":115,"negative":8,"rows":[{"capacity":0.25,"reviewCount":30,"recallDifference":-0.003371783496007104,"recallDifferenceCI":null,"models":[{"id":"logistic","tp":29.0,"fp":1.0,"fn":86.0,"recall":0.25217391304347825},{"id":"chest-pain","tp":29.387755102040817,"fp":0.612244897959183,"fn":85.61224489795919,"recall":0.2555456965394854}]},{"capacity":0.5,"reviewCount":61,"recallDifference":-0.006566104702750655,"recallDifferenceCI":[-0.02448456259810782,0.014245348916450922],"models":[{"id":"logistic","tp":59.0,"fp":2.0,"fn":56.0,"recall":0.5130434782608696},{"id":"chest-pain","tp":59.755102040816325,"fp":1.2448979591836746,"fn":55.244897959183675,"recall":0.5196095829636203}]},{"capacity":0.75,"reviewCount":92,"recallDifference":-0.009760425909494238,"recallDifferenceCI":null,"models":[{"id":"logistic","tp":89.0,"fp":3.0,"fn":26.0,"recall":0.7739130434782608},{"id":"chest-pain","tp":90.12244897959184,"fp":1.8775510204081627,"fn":24.877551020408163,"recall":0.7836734693877551}]}]},{"id":"long-beach-va","n":200,"positive":149,"negative":51,"rows":[{"capacity":0.25,"reviewCount":50,"recallDifference":0.032071315128848775,"recallDifferenceCI":null,"models":[{"id":"logistic","tp":46.0,"fp":4.0,"fn":103.0,"recall":0.3087248322147651},{"id":"chest-pain","tp":41.22137404580153,"fp":8.778625954198468,"fn":107.77862595419847,"recall":0.27665351708591635}]},{"capacity":0.5,"reviewCount":100,"recallDifference":0.03058558327783178,"recallDifferenceCI":[-0.0036603086573898836,0.06446516352853732],"models":[{"id":"logistic","tp":87.0,"fp":13.0,"fn":62.0,"recall":0.5838926174496645},{"id":"chest-pain","tp":82.44274809160306,"fp":17.557251908396935,"fn":66.55725190839694,"recall":0.5533070341718327}]},{"capacity":0.75,"reviewCount":150,"recallDifference":-0.0017135513351420576,"recallDifferenceCI":null,"models":[{"id":"logistic","tp":120.0,"fp":30.0,"fn":29.0,"recall":0.8053691275167785},{"id":"chest-pain","tp":120.25531914893617,"fp":29.744680851063833,"fn":28.744680851063833,"recall":0.8070826788519205}]}]}],"externalPrimary":{"n":617,"positive":370,"reviewCount":308,"logisticTP":233.0,"chestPainTP":231.84599828056753,"recallDifference":0.0031189235660337078,"recallDifferenceCI":[-0.017656597124832304,0.02601382573649358]}},"defaultSite":"switzerland"}</script>
+<script>
+"use strict";
+
+function runAudit() {
+  const byId = (id) => document.getElementById(id);
+  const data = JSON.parse(byId("project-data").textContent);
+  const picker = byId("model");
+  const models = new Map(data.models.map(rule => [rule.id, rule]));
+  const sites = new Map(data.sites.map(site => [site.id, site]));
+
+  const buttons = new Map();
+  const budgetButtons = new Map();
+  const budgetSites = new Map(data.budget.sites.map(site => [site.id, site]));
+  const budgetCards = new Map();
+  let mode = "budget";
+  let capacity = data.budget.primary;
+  let current = data.defaultSite && sites.has(data.defaultSite) ? data.defaultSite : data.sites[0].id;
+
+  for (const rule of data.models) {
+    const option = document.createElement("option");
+    option.value = rule.id;
+    option.textContent = rule.label;
+    picker.append(option);
+  }
+  picker.value = data.defaultModel;
+  if (data.datasetNote) byId("methods-note").textContent = data.datasetNote;
+
+
+  for (const fraction of data.budget.fractions) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "budget-control";
+    button.textContent = percent(fraction);
+    button.setAttribute("aria-controls", "budget-view");
+    button.addEventListener("click", () => {
+      capacity = fraction;
+      render();
+    });
+    byId("budgets").append(button);
+    budgetButtons.set(fraction, button);
+  }
+
+  for (const [id, label] of [[data.defaultModel, "CardioRelay"], ["chest-pain", "Chest-pain category only"]]) {
+    const article = document.createElement("article");
+    article.className = "budget-card" + (id === data.defaultModel ? "" : " baseline");
+    article.innerHTML = '<h3></h3><p class="budget-main"><b></b><span></span></p>' +
+      '<div class="budget-fill" aria-hidden="true"><i></i></div>' +
+      '<div class="errors"><span class="budget-missed"></span><span class="budget-fp"></span></div>';
+    article.querySelector("h3").textContent = label;
+    byId("budget-compare").append(article);
+    budgetCards.set(id, article);
+  }
+
+  for (const site of data.sites) {
+    const button = document.createElement("button");
+    button.className = "site";
+    button.type = "button";
+    button.setAttribute("aria-controls", "budget-view");
+    const name = document.createElement("span");
+    name.className = "site-name";
+    name.textContent = site.label;
+    const total = document.createElement("span");
+    total.className = "site-total";
+    const metric = document.createElement("span");
+    metric.className = "site-metric";
+    const count = document.createElement("strong");
+    metric.append(count, " missed");
+    const track = document.createElement("span");
+    track.className = "site-bar";
+    track.setAttribute("aria-hidden", "true");
+    const fill = document.createElement("i");
+    track.append(fill);
+    const budgetMetric = document.createElement("span");
+    budgetMetric.className = "budget-metric";
+    button.append(name, total, metric, track, budgetMetric);
+    button.addEventListener("click", () => {
+      current = site.id;
+      render();
+    });
+    buttons.set(site.id, {button, total, count, fill, metric, track, budgetMetric});
+    byId("sites").append(button);
+  }
+
+
+  function percent(fraction) {
+    return (fraction * 100).toFixed(0) + "%";
+  }
+
+  function signed(value, digits = 1) {
+    const magnitude = Math.abs(value * 100).toFixed(digits);
+    if (Number(magnitude) === 0) return magnitude;
+    return (value > 0 ? "+" : "−") + magnitude;
+  }
+
+  function showCount(value) {
+    return Number.isInteger(value) ? String(value) : value.toFixed(1);
+  }
+
+  function render() {
+    const isBudget = mode === "budget";
+    byId("choose-budget").setAttribute("aria-pressed", String(isBudget));
+    byId("choose-fixed").setAttribute("aria-pressed", String(!isBudget));
+    byId("budget-head").hidden = !isBudget;
+    byId("budget-view").hidden = !isBudget;
+    byId("fixed-head").hidden = isBudget;
+    byId("fixed-view").hidden = isBudget;
+    for (const [id, entry] of buttons.entries()) {
+      entry.metric.hidden = isBudget;
+      entry.track.hidden = isBudget;
+      entry.budgetMetric.hidden = !isBudget;
+      entry.button.setAttribute("aria-pressed", String(id === current));
+      entry.button.setAttribute("aria-controls", isBudget ? "budget-view" : "fixed-view");
+    }
+    if (isBudget) {
+      renderBudget();
+    } else {
+      renderFixed();
+    }
+  }
+
+  function renderBudget() {
+    const pooled = data.budget.externalPrimary;
+    const headline = byId("budget-headline");
+    headline.hidden = !pooled || capacity !== data.budget.primary;
+    if (!headline.hidden) {
+      const lead = document.createElement("strong");
+      lead.textContent = "No clear overall gain at 50%: ";
+      const [lower, upper] = pooled.recallDifferenceCI;
+      headline.replaceChildren(lead, signed(pooled.recallDifference, 2) +
+        " percentage points for CardioRelay (" + signed(lower, 2) + " to " + signed(upper, 2) +
+        " paired 95% interval). Both methods had " + pooled.reviewCount + " review slots across the three cohorts.");
+    }
+    for (const [fraction,button] of budgetButtons.entries()) {
+      button.setAttribute("aria-pressed", String(fraction === capacity));
+    }
+    for (const site of budgetSites.values()) {
+      const entry = buttons.get(site.id);
+      const row = site.rows.find(result => result.capacity === capacity);
+      entry.total.textContent = row.reviewCount + " of " + site.n + " slots";
+      entry.budgetMetric.textContent = signed(row.recallDifference) + " pp recall";
+      entry.budgetMetric.title = "CardioRelay recall minus chest-pain category recall";
+    }
+    const site = budgetSites.get(current);
+    const row = site.rows.find(result => result.capacity === capacity);
+    byId("budget-site").textContent = sites.get(current).label;
+    byId("budget-capacity").textContent = row.reviewCount + " of " + site.n + " records per rule";
+    for (const model of row.models) {
+      const article = budgetCards.get(model.id);
+      article.querySelector(".budget-main b").textContent = percent(model.recall);
+      article.querySelector(".budget-main span").textContent = "caught · " + showCount(model.tp) + " of " + site.positive + " positives";
+      article.querySelector(".budget-fill i").style.width = model.recall * 100 + "%";
+      article.querySelector(".budget-missed").textContent = showCount(model.fn) + " of " + site.positive + " missed";
+      article.querySelector(".budget-fp").textContent = showCount(model.fp) + " of " + site.negative + " false flags";
+    }
+    const interval = row.recallDifferenceCI;
+    const difference = "CardioRelay minus chest-pain recall: " + signed(row.recallDifference) + " percentage points.";
+    byId("budget-result").textContent = interval
+      ? difference + " 95% paired bootstrap interval: " + signed(interval[0]) + " to " + signed(interval[1]) + " points."
+      : difference + " This budget is a secondary check.";
+  }
+
+  function renderFixed() {
+    const rule = models.get(picker.value);
+    const rowFor = (site) => site.rows.find(row => row.id === rule.id);
+    const sum = (row) => row.tp + row.fp + row.tn + row.fn;
+    for (const site of data.sites) {
+      const row = rowFor(site);
+      const entry = buttons.get(site.id);
+      entry.total.textContent = sum(row) + " records";
+      const positives = row.tp + row.fn;
+      const missedPercent = positives ? Math.round(row.fn / positives * 100) : 0;
+      entry.count.textContent = row.fn + "/" + positives + " (" + missedPercent + "%)";
+      entry.fill.style.width = missedPercent + "%";
+      entry.button.setAttribute("aria-pressed", String(site.id === current));
+    }
+
+    const site = sites.get(current);
+    const row = rowFor(site);
+    const flagged = row.tp + row.fp;
+    const total = sum(row);
+    const positives = row.tp + row.fn;
+    const negatives = row.tn + row.fp;
+
+    byId("site-title").textContent = site.label;
+    byId("site-hint").textContent = total + " archived records · " + positives + " with heart disease";
+    byId("missed").textContent = row.fn + " / " + positives;
+    byId("false-flags").textContent = row.fp + " / " + negatives;
+    byId("review-note").textContent = flagged + " of " + total + " records would go to review.";
+    for (const [id, value] of Object.entries({
+      tp:row.tp, fn:row.fn, fp:row.fp, tn:row.tn,
+      pos:positives, neg:negatives, flagged, unflagged:total - flagged, total
+    })) byId(id).textContent = value;
+
+    const explanation = rule.description ?? "";
+    byId("condition").textContent = explanation;
+    byId("condition").hidden = !explanation;
+    byId("auc-note").hidden = typeof row.auc !== "number";
+    if (typeof row.auc === "number") {
+      byId("auc-note").textContent = "AUROC " + row.auc.toFixed(3) +
+        " · Measures ranking across cutoffs. The counts above show what happens at the selected rule.";
+    }
+  }
+
+  byId("choose-budget").addEventListener("click", () => { mode = "budget"; render(); });
+  byId("choose-fixed").addEventListener("click", () => { mode = "fixed"; render(); });
+  picker.addEventListener("change", render);
+  render();
+}
+
+runAudit();
+</script>
+</body>
+</html>
